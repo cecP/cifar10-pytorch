@@ -1,0 +1,7 @@
+*.html
+*.md
+.spyproject/
+__pycache__/
+Data/
+
+
