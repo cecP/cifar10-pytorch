@@ -1,7 +1,10 @@
 *.html
 *.md
+*.params
 .spyproject/
+.idea/
 __pycache__/
 Data/
+
 
 

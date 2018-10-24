@@ -11,18 +11,27 @@ import pickle
 import numpy as np
 import os
 
+import torch
+from torch.utils.data import Dataset
+
 #------------------------------------------------------------------------------
 
 def unpickle(file):
-    # unpickles a file and returns a dictionary  
-    # copied from the cifar10 site
+    ''' 
+    Unpickles a file and returns a dictionary.  
+    Copied from the cifar10 site.
+    
+    file is a pickled file from the cifar10 archive 
+    '''
+    
     with open(file, 'rb') as fo:
         dct = pickle.load(fo, encoding='bytes')        
     return dct
 
+
 def reshape_dct_files(dct):
-    # takes a dct file generated from unpickle and returns 2 numpy arrays
-    # with pixels and with labels
+    ''' Takes a dct file generated from unpickle and returns 2 numpy arrays with pixels and with labels ''' 
+  
     pixels_array = dct[b'data']
     pixels_array = pixels_array.reshape(pixels_array.shape[0], 3, 32, 32)
     pixels_array = np.moveaxis(pixels_array, 1, 3)
@@ -30,11 +39,16 @@ def reshape_dct_files(dct):
     labels_array = dct[b'labels']
     
     return pixels_array, labels_array
+
+ 
+def convert_pkl_to_numpy(file_path): 
+    ''' 
+    Reshapes the pkl files to numpy arrays. 
+    Returns two sets of arrays one for train and one for test.
     
-def convert_pkl_to_numpy(file_path):   
-    # reshapes the pkl files to numpy arrays; creates two sets of arrays 
-    # one for train and one for test
-    # file_path is the path of the extracted cifar10 archive
+    file_path: the path of the extracted cifar10 archive
+    '''
+
     pixels_lists = []
     labels_lists = []
     
@@ -49,43 +63,44 @@ def convert_pkl_to_numpy(file_path):
     
     dct = unpickle(os.path.join(file_path, 'test_batch'))
     test_pixels_array, test_labels_array = reshape_dct_files(dct)
-
+    test_labels_array = np.array(test_labels_array, "int32")
+    
     return train_pixels_array, train_labels_array, test_pixels_array, test_labels_array
 
+# pytorch specific classes for loading the data
+#------------------------------------------------------------------------------
 
+class CIFAR10Dataset(Dataset):    
+    def __init__(self, pixels, labels, transform=None):   
+        '''
+        A class used by the pytorch DataLoader for training of the models in pytorch
+        
+        Args:
+            pixels (int numpy array): pixels with shape (batch_size, 32, 32, 3)
+            labels (int numpy array): the labels codes 0 - 9
+            transform: optional transformations applied on the pixels 
+        '''
+        self.transform = transform
+        self.pixels = pixels
+        self.labels = labels
+                
+        if pixels.shape[0] != labels.shape[0]:
+            raise IOError('The length of the pixels and labels list does not match!')
+                         
+    def __len__(self):        
+        return(len(self.labels))
+        
+    def __getitem__(self, idx):        
+        pixels = self.pixels[idx]
+        pixels = np.moveaxis(pixels, 2, 0)        
 
+        label = self.labels[idx]
+        
+        pixels = torch.tensor(pixels, dtype=torch.float)
+        label = torch.tensor(label, dtype=torch.long)
+        
+        if self.transform:        
+            pixels = self.transform(pixels) 
+        
+        return pixels, label
 
-#
-#dct = unpickle("./Data/cifar-10-python/cifar-10-batches-py/data_batch_1")
-#a[b"data"].shape
-#
-#
-#np.array([]).reshape(32, 32, 3)
-#
-#plt.imshow(pixels_array[4]) 
-#
-#def load_CIFAR_batch(filename):
-#    """ load single batch of cifar """
-#    print(filename)
-#    with open(filename, 'rb') as f:
-#        datadict = cPickle.load(f)
-#        X = datadict['data']
-#        Y = datadict['labels']
-#        X = X.reshape(10000, 3, 32, 32).transpose(0, 2, 3, 1).astype("float")
-#        Y = np.array(Y)
-#        return X, Y
-#
-#def load_CIFAR10(ROOT):
-#    """ load all of cifar """
-#    xs = []
-#    ys = []
-#    for b in range(1, 6):
-#        f = os.path.join(ROOT, 'data_batch_%d' % (b,))
-#        X, Y = load_CIFAR_batch(f)
-#        xs.append(X)
-#        ys.append(Y)    
-#    Xtr = np.concatenate(xs)
-#    Ytr = np.concatenate(ys)
-#    del X, Y
-#    Xte, Yte = load_CIFAR_batch(os.path.join(ROOT, 'test_batch'))
-#    return Xtr, Ytr, Xte, Yte
