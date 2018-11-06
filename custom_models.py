@@ -1,9 +1,13 @@
+''' Model classes for pytorch along with some helper functions '''
 
 import numpy as np
 
 import torch
 import torch.nn as nn
+import sklearn.metrics
 #import ipdb
+
+#------------------------------------------------------------------------------
 
 labels_dict = {
         0: "airplane",
@@ -17,6 +21,8 @@ labels_dict = {
         8: "ship",
         9: "truck"
         }
+
+#------------------------------------------------------------------------------
 
 class CNNModel(nn.Module):
     ''' A model class for convolutional neural network '''
@@ -55,7 +61,7 @@ class CNNModel(nn.Module):
             x = x.cuda()                              
         outputs = self.forward(x)
         
-        outputs = outputs.cpu() # cause cannot convert CUDA tensor to numpy
+        outputs = outputs.cpu() # cause cannot convert CUDA tensor to numpy array, the outputs should be sent to cpu
         outputs = outputs.data.numpy()
         predictions = np.argmax(outputs, 1)        
         
@@ -81,3 +87,28 @@ class CNNModel(nn.Module):
                 if i % 100 == 0:
                     print("loss: {}".format(loss_tensor.data)) # for each epoch        
             print("loss: {}".format(loss_tensor.data)) # for each epoch
+            
+#------------------------------------------------------------------------------          
+          
+def predict_many_images(model, X_test, y_test):
+    ''' As memory problems may occur when trying to predict many images this function is a workaround for this 
+    
+        X_test (numeric numpy array): pixels with example shape (10000, 32, 32, 3)
+        y_test (numeric numpy array): number corresponding to the labels
+    '''
+    prediction = []
+    num_images = X_test.shape[0]
+    
+    for i in range(num_images):   
+        current = X_test[i][None,:]
+        current_prediction = model.predict(current)
+        prediction.append(current_prediction)
+        if i % 100 == 0:
+            print("{} of {}".format(i, num_images))
+    prediction = np.vstack(prediction)
+    prediction = np.squeeze(prediction)
+
+    acc = np.mean(prediction == y_test)
+    cf = sklearn.metrics.confusion_matrix(prediction, y_test)
+
+    return acc, cf

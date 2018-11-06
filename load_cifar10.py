@@ -1,10 +1,10 @@
-'''
-Code for importing and preparing the cifar10 dataset for modelling
+''' Functions for importing and preparing the cifar10 dataset for modelling with pytorch
 
-The initial datafiles should be downloaded from here:
-    https://www.cs.toronto.edu/~kriz/cifar.html
+The initial datafiles are here: https://www.cs.toronto.edu/~kriz/cifar.html
 
-CIFAR-10 python version - should be downloaded and extracted in some folder
+As "CIFAR-10 python version" of the data is used, it should be downloaded and 
+extracted in some folder. The tar.gz file contains pickled objects, which are 
+processed by the code in this module.
 '''
 
 import pickle
@@ -12,13 +12,12 @@ import numpy as np
 import os
 
 import torch
-from torch.utils.data import Dataset
+import torch.utils.data 
 
 #------------------------------------------------------------------------------
 
 def unpickle(file):
-    ''' 
-    Unpickles a file and returns a dictionary.  
+    ''' Unpickles a file and returns a dictionary.  
     Copied from the cifar10 site.
     
     file is a pickled file from the cifar10 archive 
@@ -42,11 +41,10 @@ def reshape_dct_files(dct):
 
  
 def convert_pkl_to_numpy(file_path): 
-    ''' 
-    Reshapes the pkl files to numpy arrays. 
+    ''' Reshapes the pkl files to numpy arrays. 
     Returns two sets of arrays one for train and one for test.
     
-    file_path: the path of the extracted cifar10 archive
+    file_path (string): the path of the extracted cifar10 archive
     '''
 
     pixels_lists = []
@@ -70,15 +68,15 @@ def convert_pkl_to_numpy(file_path):
 # pytorch specific classes for loading the data
 #------------------------------------------------------------------------------
 
-class CIFAR10Dataset(Dataset):    
+class CIFAR10Dataset(torch.utils.data.Dataset):    
     def __init__(self, pixels, labels, transform=None):   
-        '''
-        A class used by the pytorch DataLoader for training of the models in pytorch
+        ''' A class used by the pytorch DataLoader for training of the models in pytorch.
+        Should override __len__ and __getitem__ from Dataset
         
         Args:
-            pixels (int numpy array): pixels with shape (batch_size, 32, 32, 3)
-            labels (int numpy array): the labels codes 0 - 9
-            transform: optional transformations applied on the pixels 
+            pixels (numeric numpy array): pixels with shape (batch_size, 32, 32, 3)
+            labels (numeric numpy array): the labels codes 0 - 9
+            transform (torchvision.transforms): optional transformations applied on the pixels 
         '''
         self.transform = transform
         self.pixels = pixels
