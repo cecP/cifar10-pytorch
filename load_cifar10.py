@@ -16,6 +16,19 @@ import torch.utils.data
 
 #------------------------------------------------------------------------------
 
+def timer(func):
+    ''' decorator for timing functions '''
+    import time
+    
+    def wrapper(*args, **kwargs):
+        start = time.time()
+        result = func(*args, **kwargs)
+        stop = time.time()        
+        print("{} runtime: {} seconds".format(func.__qualname__ , (stop - start))) # __qualname__ displays methods names as well as function names
+
+        return result
+    return wrapper
+
 def unpickle(file):
     ''' Unpickles a file and returns a dictionary.  
     Copied from the cifar10 site.
@@ -39,7 +52,7 @@ def reshape_dct_files(dct):
     
     return pixels_array, labels_array
 
- 
+@timer 
 def convert_pkl_to_numpy(file_path): 
     ''' Reshapes the pkl files to numpy arrays. 
     Returns two sets of arrays one for train and one for test.

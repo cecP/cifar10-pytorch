@@ -5,9 +5,11 @@ import numpy as np
 import torch
 import torch.nn as nn
 import sklearn.metrics
+
+from load_cifar10 import timer
 #import ipdb
 
-#------------------------------------------------------------------------------
+
 
 labels_dict = {
         0: "airplane",
@@ -22,7 +24,7 @@ labels_dict = {
         9: "truck"
         }
 
-#------------------------------------------------------------------------------
+
 
 class CNNModel(nn.Module):
     ''' A model class for convolutional neural network '''
@@ -48,7 +50,8 @@ class CNNModel(nn.Module):
         out = self.fc1(out)        
         
         return out
-            
+    
+         
     def predict(self, x, return_label=False):     
         ''' this method outputs the predictions in more convenient format than forward 
             x (numpy array) - pixels with shape (batch_size, 32, 32, 3)
@@ -70,7 +73,7 @@ class CNNModel(nn.Module):
             
         return predictions
     
-    
+    @timer
     def train(self, loader, loss, optimizer, num_epochs):        
         for epoch in range(num_epochs):
             for i, (pixels, labels) in enumerate(loader):
@@ -89,7 +92,8 @@ class CNNModel(nn.Module):
             print("loss: {}".format(loss_tensor.data)) # for each epoch
             
 #------------------------------------------------------------------------------          
-          
+   
+@timer       
 def predict_many_images(model, X_test, y_test):
     ''' As memory problems may occur when trying to predict many images this function is a workaround for this 
     

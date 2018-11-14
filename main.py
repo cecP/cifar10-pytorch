@@ -1,7 +1,7 @@
 
+%autoreload 2
 import numpy as np
 import matplotlib.pyplot as plt
-from timeit import default_timer as timer
 
 import torch
 
@@ -27,9 +27,9 @@ if useGPU:
 #model.load_state_dict(torch.load("model.params")) # if coefficients from pretrained model would be used
 
 # setting hyperparameters
-batch_size = 30
+batch_size = 400
 learning_rate = 0.0001
-num_epochs = 2
+num_epochs = 1
 loss = torch.nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
@@ -37,13 +37,12 @@ optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 train_loader = torch.utils.data.DataLoader(dataset=train_dataset,
                                            batch_size=batch_size,
                                            shuffle=False)
-start = timer()
+
 model.train(loader=train_loader, 
             loss=loss, 
             optimizer=optimizer, 
             num_epochs=num_epochs)
-stop = timer()
-print("Elapsed time: {}".format(stop - start))
+
 torch.save(model.state_dict(), "model.params")
 
 
@@ -51,7 +50,7 @@ torch.save(model.state_dict(), "model.params")
 #------------------------------------------------------------------------------
 
 # single image
-current = X_test[1] 
+current = X_test[2] 
 plt.imshow(current)
 model.predict(current[None,:], return_label=True) # should add an additional axis for the forward method to work
 
