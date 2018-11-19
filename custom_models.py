@@ -2,7 +2,7 @@
 
 import numpy as np
 
-import torch
+import torch as torch
 import torch.nn as nn
 import sklearn.metrics
 

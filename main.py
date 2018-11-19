@@ -1,9 +1,9 @@
 
-%autoreload 2
+#%autoreload 2
 import numpy as np
 import matplotlib.pyplot as plt
 
-import torch
+import torch as torch
 
 import custom_models 
 import load_cifar10 
@@ -12,7 +12,7 @@ import load_cifar10
 # Loading the data
 #------------------------------------------------------------------------------
 
-PICKLED_FILES_PATH = "./Data/cifar-10-python/cifar-10-batches-py" 
+PICKLED_FILES_PATH = "./Data/cifar-10-batches-py" 
 
 X_train, y_train, X_test, y_test = load_cifar10.convert_pkl_to_numpy(PICKLED_FILES_PATH)
 train_dataset = load_cifar10.CIFAR10Dataset(X_train, y_train)
@@ -20,7 +20,7 @@ train_dataset = load_cifar10.CIFAR10Dataset(X_train, y_train)
 # Training the model
 #------------------------------------------------------------------------------
 
-useGPU = False
+useGPU = True
 model = custom_models.CNNModel(useGPU)
 if useGPU:
     model.cuda()
@@ -29,7 +29,7 @@ if useGPU:
 # setting hyperparameters
 batch_size = 400
 learning_rate = 0.0001
-num_epochs = 1
+num_epochs = 20
 loss = torch.nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
