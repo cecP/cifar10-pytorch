@@ -23,7 +23,7 @@ train_dataset = load_cifar10.CIFAR10Dataset(X_train, y_train)
 cnn_module = custom_models.CNNModule()
 
 use_gpu = False
-model = custom_models.CNNModel(cnn_module, use_gpu)
+model = custom_models.CustomModel(cnn_module, use_gpu)
 if use_gpu:
     model.cuda()
 #model.module.load_state_dict(torch.load("model.params")) # if coefficients from pretrained model would be used
@@ -56,8 +56,8 @@ plt.imshow(current)
 model.predict(current[None,:], return_label=True) # should add an additional axis for the forward method to work
 
 # multiple images
-X_for_evaluation = X_test[0:1000,:]
-y_for_evaluation = y_test[0:1000]
+X_for_evaluation = X_test[0:200,:]
+y_for_evaluation = y_test[0:200]
 acc, cf = custom_models.predict_many_images(model, X_for_evaluation, y_for_evaluation)
 print("Acc: {}, \n\nConfusion Matrix: \n {}".format(acc, cf))
 

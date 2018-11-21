@@ -5,6 +5,7 @@
 .idea/
 __pycache__/
 Data/
+testing.py
 
 
 
