@@ -24,8 +24,7 @@ cnn_module = custom_models.CNNModule()
 
 use_gpu = False
 model = custom_models.CustomModel(cnn_module, use_gpu)
-if use_gpu:
-    model.cuda()
+
 #model.module.load_state_dict(torch.load("model.params")) # if coefficients from pretrained model would be used
 
 # setting hyperparameters

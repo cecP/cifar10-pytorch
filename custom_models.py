@@ -54,7 +54,7 @@ class CustomModel:
        self.module = Module  
        self.use_gpu = use_gpu
        if self.use_gpu:
-           self.Module.cuda()
+           self.module.cuda()
     
     def predict(self, x, return_label=False):     
         ''' this method outputs the predictions in more convenient format than forward 
