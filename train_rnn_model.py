@@ -1,86 +1,61 @@
 
-
-%autoreload 2
-
 import numpy as np
 import matplotlib.pyplot as plt
-from sklearn.metrics import confusion_matrix
-from PIL import Image
-import ipdb
-import sys
 
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
 
-from torch.utils.data import Dataset, DataLoader
+import custom_models 
+import load_cifar10 
+#import ipdb
 
-from MNISTMineDataset import MNISTMineDataset, ReshapeToPic
-
-from RNN import RNNmodel
-
-# MNIST import
-exec(open("MNIST_data_import.py").read())
-
+# Loading the data
 #------------------------------------------------------------------------------
 
-train_dataset = MNISTMineDataset(mnist_train, transform=ReshapeToPic((28, 28), withChannel=False))
+PICKLED_FILES_PATH = "./Data/cifar-10-batches-py" 
 
-#type(train_dataset.__getitem__(1)[0])
+X_train, y_train, X_test, y_test = load_cifar10.convert_pkl_to_numpy(PICKLED_FILES_PATH)
+train_dataset = load_cifar10.CIFAR10Dataset(X_train, y_train)
 
-train_loader = DataLoader(dataset=train_dataset,
-                          batch_size=20,
-                          shuffle=False)
-
-# should transform
-
-model = RNNmodel(28, 100, 2, 10)
-
-loss = nn.CrossEntropyLoss()
-
-optimizer = torch.optim.Adam(model.parameters(), lr=0.0001)
-
-model.train(loader=train_loader, loss=loss, optimizer=optimizer, num_epochs=10)
-
-model.evaluate(np.reshape(mnist_test_data, [10000, 28, 28]), mnist_test_labels)
-
-# model evaluation
-#------------------------------------------------------------------------------        
-
-predictions = model.predict(np.reshape(mnist_test_data, [10000, 28, 28]))
-indexes_of_mismatches = np.where(predictions != mnist_test_labels)[0] # no idea why this is a tuple
-
-index = indexes_of_mismatches[5]
-plot(mnist_test_data[index])
-model.predict(np.reshape(mnist_test_data[index], [1, 28, 28]))
-
-np.mean(predictions == mnist_test_labels)
-
-confusion_matrix(predictions, mnist_test_labels)
-
-
-
-# on custom images
+# Training the model
 #------------------------------------------------------------------------------
 
-folder = "D:/62 Image Recognition 02/MNIST/data/MNISTcsvs/"
-name = "A0 - Copy.jpg"
+rnn_module = custom_models.RNNModule(32, 100, 2, 10)
 
-im1 = Image.open(folder + name)
-im1 = im1.resize((28, 28))
-im1 = im1.convert('L') # converts to grayscale
-im1 = im1.getdata()
-im1 = 255 - np.array(im1).astype(np.float32)
+use_gpu = False
+model = custom_models.CustomModel(rnn_module, use_gpu)
 
-plot(im1)
-a = np.reshape(im1, (1, 28, 28))
-model.predict(a)
+#model.module.load_state_dict(torch.load("model.params")) # if coefficients from pretrained model would be used
 
+# setting hyperparameters
+batch_size = 400
+learning_rate = 0.0001
+num_epochs = 1
+loss = torch.nn.CrossEntropyLoss()
+optimizer = torch.optim.Adam(model.module.parameters(), lr=learning_rate)
 
+# training
+train_loader = torch.utils.data.DataLoader(dataset=train_dataset,
+                                           batch_size=batch_size,
+                                           shuffle=False)
 
-# plotting the weights
+model.train(loader=train_loader, 
+            loss=loss, 
+            optimizer=optimizer, 
+            num_epochs=num_epochs)
+
+torch.save(model.module.state_dict(), "model.params")
+
+# Evaluation of the model
 #------------------------------------------------------------------------------
 
-list(model.parameters())[0][0]
-weights = list(model.parameters())[0].data.numpy()
-plot(weights[0])
+# single image
+current = X_test[2] 
+plt.imshow(current)
+model.predict(current[None,:], return_label=True) # should add an additional axis for the forward method to work
+
+# multiple images
+X_for_evaluation = X_test[0:100,:]
+y_for_evaluation = y_test[0:100]
+acc, cf = custom_models.predict_many_images(model, X_for_evaluation, y_for_evaluation)
+print("Acc: {}, \n\nConfusion Matrix: \n {}".format(acc, cf))
+

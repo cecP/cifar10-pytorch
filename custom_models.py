@@ -48,6 +48,56 @@ class CNNModule(nn.Module):
         
         return out
     
+    
+
+class RNNModule(nn.Module):
+    ''' A module for recurrent neural network '''
+    
+    def __init__(self, input_dim, hidden_dim, num_layers, output_dim):
+        super().__init__() 
+        
+        self.num_layers = num_layers
+        self.hidden_dim = hidden_dim
+        
+        self.lstm_chan1 = nn.LSTM(input_dim, hidden_dim, num_layers, batch_first=True)
+        self.lstm_chan2 = nn.LSTM(input_dim, hidden_dim, num_layers, batch_first=True)
+        self.lstm_chan3 = nn.LSTM(input_dim, hidden_dim, num_layers, batch_first=True)
+        
+        self.fc = nn.Linear(3 * hidden_dim, output_dim)        
+        
+        
+    def forward(self, x):     
+        # Initialize hidden state - dimensions are (num_layers, batch_size, hidden_dim)
+        h0_chan1 = torch.zeros(self.num_layers, x.size(0), self.hidden_dim)
+        c0_chan1 = torch.zeros(self.num_layers, x.size(0), self.hidden_dim)
+        
+        h0_chan2 = torch.zeros(self.num_layers, x.size(0), self.hidden_dim)
+        c0_chan2 = torch.zeros(self.num_layers, x.size(0), self.hidden_dim)
+        
+        h0_chan3 = torch.zeros(self.num_layers, x.size(0), self.hidden_dim)
+        c0_chan3 = torch.zeros(self.num_layers, x.size(0), self.hidden_dim)
+                
+        # the pixel batches from each channel are taken separately
+        pixels_batch_chan_1 = x[:,0,:,:]
+        pixels_batch_chan_2 = x[:,1,:,:]
+        pixels_batch_chan_3 = x[:,2,:,:]
+        
+        lstm_out_chan_1, _ = self.lstm_chan1(pixels_batch_chan_1, (h0_chan1, c0_chan1))
+        lstm_out_chan_2, _ = self.lstm_chan1(pixels_batch_chan_2, (h0_chan2, c0_chan2))
+        lstm_out_chan_3, _ = self.lstm_chan1(pixels_batch_chan_3, (h0_chan3, c0_chan3))
+        
+        lstm_out_chan_1 = lstm_out_chan_1[:, -1, :]
+        lstm_out_chan_2 = lstm_out_chan_2[:, -1, :]
+        lstm_out_chan_3 = lstm_out_chan_3[:, -1, :]
+        
+        lstm_out_concat = torch.cat([lstm_out_chan_1, lstm_out_chan_2, lstm_out_chan_3], 1)        
+        
+        out = self.fc(lstm_out_concat)                      
+        
+        return out
+    
+#------------------------------------------------------------------------------          
+    
 class CustomModel:     
     ''' Class that wraps nn.Modules into a model with predict and train functions '''    
     def __init__(self, Module, use_gpu):        
@@ -97,27 +147,6 @@ class CustomModel:
                     print("loss: {}".format(loss_tensor.data)) # for each epoch        
             print("loss: {}".format(loss_tensor.data)) # for each epoch
 
-#------------------------------------------------------------------------------          
-
-#class RNNModel(nn.Module, CustomModel):
-#    def __init__(self, in_dim, hidden_dim, n_layer, n_class):
-#        super().__init__()
-#        self.n_layer = n_layer
-#        self.hidden_dim = hidden_dim
-#        self.lstm = nn.LSTM(in_dim, hidden_dim, n_layer, batch_first=True)
-#        self.classifier = nn.Linear(hidden_dim, n_class)
-#        
-#        def forward(self, x):
-#            # h0 = Variable(torch.zeros(self.n_layer, x.size(1),
-#            #   self.hidden_dim)).cuda()
-#            # c0 = Variable(torch.zeros(self.n_layer, x.size(1),
-#            #   self.hidden_dim)).cuda()
-#            out, _ = self.lstm(x)
-#            out = out[:, -1, :]
-#            out = self.classifier(out)
-#            return out
-    
-    
 #------------------------------------------------------------------------------          
    
 @timer       
