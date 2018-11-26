@@ -33,7 +33,6 @@ num_epochs = 1
 loss = torch.nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(model.module.parameters(), lr=learning_rate)
 
-# training
 train_loader = torch.utils.data.DataLoader(dataset=train_dataset,
                                            batch_size=batch_size,
                                            shuffle=False)

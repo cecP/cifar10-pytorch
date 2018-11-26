@@ -53,9 +53,10 @@ class CNNModule(nn.Module):
 class RNNModule(nn.Module):
     ''' A module for recurrent neural network '''
     
-    def __init__(self, input_dim, hidden_dim, num_layers, output_dim):
+    def __init__(self, input_dim, hidden_dim, num_layers, output_dim, use_gpu):
         super().__init__() 
         
+        self.use_gpu = use_gpu
         self.num_layers = num_layers
         self.hidden_dim = hidden_dim
         
@@ -66,7 +67,8 @@ class RNNModule(nn.Module):
         self.fc = nn.Linear(3 * hidden_dim, output_dim)        
         
         
-    def forward(self, x):     
+    def forward(self, x):   
+        
         # Initialize hidden state - dimensions are (num_layers, batch_size, hidden_dim)
         h0_chan1 = torch.zeros(self.num_layers, x.size(0), self.hidden_dim)
         c0_chan1 = torch.zeros(self.num_layers, x.size(0), self.hidden_dim)
@@ -76,6 +78,14 @@ class RNNModule(nn.Module):
         
         h0_chan3 = torch.zeros(self.num_layers, x.size(0), self.hidden_dim)
         c0_chan3 = torch.zeros(self.num_layers, x.size(0), self.hidden_dim)
+        
+        if self.use_gpu:
+            h0_chan1 = h0_chan1.cuda()
+            c0_chan1 = c0_chan1.cuda()
+            h0_chan2 = h0_chan2.cuda()
+            c0_chan2 = c0_chan2.cuda()
+            h0_chan3 = h0_chan3.cuda()
+            c0_chan3 = c0_chan3.cuda()   
                 
         # the pixel batches from each channel are taken separately
         pixels_batch_chan_1 = x[:,0,:,:]
@@ -108,14 +118,19 @@ class CustomModel:
     
     def predict(self, x, return_label=False):     
         ''' this method outputs the predictions in more convenient format than forward 
-            x (numpy array) - pixels with shape (batch_size, 32, 32, 3)
+            x (numpy array, torch tensor) - pixels with shape (batch_size, 32, 32, 3)            
             return_label (boolean) - returns the name of the class not just the label code 
         '''      
-        x = np.moveaxis(x, 3, 1)                
-        x = torch.tensor(x, dtype=torch.float32) 
+        
+        if not isinstance(x, torch.Tensor):
+            x = np.moveaxis(x, 3, 1)                
+            x = torch.tensor(x, dtype=torch.float32) 
+        else:
+            x = x.transpose(3, 1)
         
         if self.use_gpu:     
-            x = x.cuda()                              
+            x = x.cuda()  
+                         
         outputs = self.module.forward(x)
         
         outputs = outputs.cpu() # cause cannot convert CUDA tensor to numpy array, the outputs should be sent to cpu
@@ -132,12 +147,14 @@ class CustomModel:
         ''' method that wraps the training of the model '''
         
         for epoch in range(num_epochs):
+            print("epoch: {}".format(epoch))
+            print("--------------------------------")
             for i, (pixels_batch, labels_batch) in enumerate(loader):
                 optimizer.zero_grad()    
                 if self.use_gpu:                    
                     pixels_batch = pixels_batch.cuda()
                     labels_batch = labels_batch.cuda()
-
+                              
                 outputs = self.module.forward(pixels_batch)    
                 
                 loss_tensor = loss(outputs, labels_batch)
@@ -146,29 +163,49 @@ class CustomModel:
                 if i % 100 == 0:
                     print("loss: {}".format(loss_tensor.data)) # for each epoch        
             print("loss: {}".format(loss_tensor.data)) # for each epoch
+    
+    @timer            
+    def eval(self, dataset):
+        prediction = []
+        for i, (pixels_batch, labels_batch) in enumerate(dataset):
+            current_prediction = model.predict(pixels_batch)
 
 #------------------------------------------------------------------------------          
    
 @timer       
-def predict_many_images(model, X_test, y_test):
+def predict_many_images(model, X_test=None, y_test=None, dataset=None):
     ''' As memory problems may occur when trying to predict many images this function is a workaround for this 
     
         X_test (numeric numpy array): pixels with example shape (10000, 32, 32, 3)
         y_test (numeric numpy array): number corresponding to the labels
     '''
-    prediction = []
-    num_images = X_test.shape[0]
     
-    for i in range(num_images):   
-        current = X_test[i][None,:]
-        current_prediction = model.predict(current)
-        prediction.append(current_prediction)
-        if i % 100 == 0:
-            print("{} of {}".format(i, num_images))
+    prediction = []
+    if dataset is None:
+        num_images = X_test.shape[0]
+        
+        for i in range(num_images):   
+            current = X_test[i][None,:]
+            current_prediction = model.predict(current)
+            prediction.append(current_prediction)
+            if i % 100 == 0:
+                print("{} of {}".format(i, num_images))
+    else:
+         num_images = len(dataset)
+         y_test = []
+         for i, (current, y) in enumerate(dataset):
+             y_test.append(y)
+             current = current.unsqueeze(0).transpose(3, 1)
+             current_prediction = model.predict(current)
+             prediction.append(current_prediction)
+             if i % 100 == 0:
+                 print("{} of {}".format(i, num_images))         
+            
     prediction = np.vstack(prediction)
     prediction = np.squeeze(prediction)
 
     acc = np.mean(prediction == y_test)
     cf = sklearn.metrics.confusion_matrix(prediction, y_test)
 
+    
     return acc, cf

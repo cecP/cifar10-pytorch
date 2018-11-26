@@ -12,7 +12,7 @@ import load_cifar10
 # Loading the data
 #------------------------------------------------------------------------------
 
-PICKLED_FILES_PATH = "./Data/cifar-10-python/cifar-10-batches-py" 
+PICKLED_FILES_PATH = "./Data/cifar-10-batches-py" 
 
 X_train, y_train, X_test, y_test = load_cifar10.convert_pkl_to_numpy(PICKLED_FILES_PATH)
 train_dataset = load_cifar10.CIFAR10Dataset(X_train, y_train)
@@ -22,7 +22,7 @@ train_dataset = load_cifar10.CIFAR10Dataset(X_train, y_train)
 
 cnn_module = custom_models.CNNModule()
 
-use_gpu = False
+use_gpu = True
 model = custom_models.CustomModel(cnn_module, use_gpu)
 
 #model.module.load_state_dict(torch.load("model.params")) # if coefficients from pretrained model would be used
@@ -34,7 +34,6 @@ num_epochs = 1
 loss = torch.nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(model.module.parameters(), lr=learning_rate)
 
-# training
 train_loader = torch.utils.data.DataLoader(dataset=train_dataset,
                                            batch_size=batch_size,
                                            shuffle=False)
