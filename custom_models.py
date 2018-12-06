@@ -7,7 +7,6 @@ import torch.nn as nn
 import sklearn.metrics
 
 from load_cifar10 import timer
-#import ipdb
 
 labels_dict = {
         0: "airplane",
@@ -36,7 +35,7 @@ class CNNModule(nn.Module):
                         nn.ReLU(),
                         nn.MaxPool2d(2)
                     )        
-        self.fc1 = nn.Linear(40 * 8 * 8, 10) # here it is easiest if you print the shape of the tensor before the linear layer in the forward method      
+        self.fc1 = nn.Linear(40 * 8 * 8, 10) 
 
     def forward(self, x):     
         out = self.cnn_model(x) 
@@ -76,22 +75,19 @@ class CNNModule2(nn.Module):
             nn.Linear(200, 10)
         )
         
-#        self.fc1 = nn.Linear(40 * 8 * 8, 10) # here it is easiest if you print the shape of the tensor before the linear layer in the forward method      
 
     def forward(self, x):     
         out = self.features(x) 
 
         out = out.view(out.size(0), -1) # the fully connected layer takes 1 dim input; 
-                                        # the size of the batch is the first dimension of the new tensor and everything else flattened
-         
-        out = self.classifier(out)        
-        
+                                        # the size of the batch is the first dimension of the new tensor and everything else flattened         
+        out = self.classifier(out)                
         return out
     
     
 
 class RNNModule(nn.Module):
-    ''' A module for recurrent neural network. It is only one directional. '''
+    ''' A module for recurrent neural network. '''
     
     def __init__(self, input_dim, hidden_dim, num_layers, output_dim, use_gpu):
         super().__init__() 
@@ -105,27 +101,22 @@ class RNNModule(nn.Module):
         self.lstm_chan3 = nn.LSTM(input_dim, hidden_dim, num_layers, batch_first=True)
         
         self.fc = nn.Linear(3 * hidden_dim, output_dim)        
-        
-        
-    def forward(self, x):   
-        
-        # Initialize hidden state - dimensions are (num_layers, batch_size, hidden_dim)
-        h0_chan1 = torch.zeros(self.num_layers, x.size(0), self.hidden_dim)
-        c0_chan1 = torch.zeros(self.num_layers, x.size(0), self.hidden_dim)
-        
-        h0_chan2 = torch.zeros(self.num_layers, x.size(0), self.hidden_dim)
-        c0_chan2 = torch.zeros(self.num_layers, x.size(0), self.hidden_dim)
-        
-        h0_chan3 = torch.zeros(self.num_layers, x.size(0), self.hidden_dim)
-        c0_chan3 = torch.zeros(self.num_layers, x.size(0), self.hidden_dim)
-        
+                
+    def forward(self, x):           
         if self.use_gpu:
-            h0_chan1 = h0_chan1.cuda()
-            c0_chan1 = c0_chan1.cuda()
-            h0_chan2 = h0_chan2.cuda()
-            c0_chan2 = c0_chan2.cuda()
-            h0_chan3 = h0_chan3.cuda()
-            c0_chan3 = c0_chan3.cuda()   
+            device_str = "cuda:0"
+        else:
+            device_str = "cpu"
+            
+        # Initialize hidden state - dimensions are (num_layers, batch_size, hidden_dim)
+        h0_chan1 = torch.zeros(self.num_layers, x.size(0), self.hidden_dim, device=torch.device(device_str))
+        c0_chan1 = torch.zeros(self.num_layers, x.size(0), self.hidden_dim, device=torch.device(device_str))
+        
+        h0_chan2 = torch.zeros(self.num_layers, x.size(0), self.hidden_dim, device=torch.device(device_str))
+        c0_chan2 = torch.zeros(self.num_layers, x.size(0), self.hidden_dim, device=torch.device(device_str))
+        
+        h0_chan3 = torch.zeros(self.num_layers, x.size(0), self.hidden_dim, device=torch.device(device_str))
+        c0_chan3 = torch.zeros(self.num_layers, x.size(0), self.hidden_dim, device=torch.device(device_str))        
                 
         # the pixel batches from each channel are taken separately
         pixels_batch_chan_1 = x[:,0,:,:]
@@ -160,17 +151,17 @@ class CustomModel:
         ''' this method outputs the predictions in more convenient format than forward 
             x (numpy array, torch tensor) - pixels with shape (batch_size, 32, 32, 3)            
             return_label (boolean) - returns the name of the class not just the label code 
-        '''      
+        '''              
         
         if not isinstance(x, torch.Tensor):
             x = np.moveaxis(x, 3, 1)                
             x = torch.tensor(x, dtype=torch.float32) 
-        else:
+        else:  
             x = x.transpose(3, 1)
-        
+            
         if self.use_gpu:     
-            x = x.cuda()  
-                         
+            x = x.cuda()
+                                 
         outputs = self.module.forward(x)
         
         outputs = outputs.cpu() # cause cannot convert CUDA tensor to numpy array, the outputs should be sent to cpu
@@ -190,11 +181,12 @@ class CustomModel:
             print("epoch: {}".format(epoch))
             print("--------------------------------")
             for i, (pixels_batch, labels_batch) in enumerate(loader):
-                optimizer.zero_grad()    
-                if self.use_gpu:                    
+                optimizer.zero_grad()                                           
+                
+                if self.use_gpu and pixels_batch.device.type == "cpu":                    
                     pixels_batch = pixels_batch.cuda()
-                    labels_batch = labels_batch.cuda()
-                              
+                    labels_batch = labels_batch.cuda()                      
+                                                  
                 outputs = self.module.forward(pixels_batch)    
                 
                 loss_tensor = loss(outputs, labels_batch)

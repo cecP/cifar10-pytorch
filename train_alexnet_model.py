@@ -6,11 +6,11 @@ import torchvision.transforms as transforms
 
 import custom_models 
 import load_cifar10 
-#import ipdb
 
 # Loading the data
 #------------------------------------------------------------------------------
 
+use_gpu = True
 PICKLED_FILES_PATH = "./Data/cifar-10-batches-py" 
 
 X_train, y_train, X_test, y_test = load_cifar10.convert_pkl_to_numpy(PICKLED_FILES_PATH)
@@ -22,7 +22,7 @@ transform = transforms.Compose([
         transforms.ToTensor()
         ])
 
-train_dataset = load_cifar10.CIFAR10Dataset(X_train, y_train, transform=transform)
+train_dataset = load_cifar10.CIFAR10Dataset(X_train, y_train, use_gpu=False, transform=transform) # in order for thransforms to work output tensors should not be on gpu
 
 # Training the model
 #------------------------------------------------------------------------------
@@ -65,14 +65,12 @@ class AlexNet(nn.Module):
 
 alexnet = AlexNet(num_classes=10)
 
-use_gpu = True
 model = custom_models.CustomModel(alexnet, use_gpu)
-#model.module.load_state_dict(torch.load("model.params")) # if coefficients from pretrained model would be used
 
 # setting hyperparameters
 batch_size = 200
 learning_rate = 0.0001
-num_epochs = 30
+num_epochs = 1
 loss = torch.nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(model.module.parameters(), lr=learning_rate)
 

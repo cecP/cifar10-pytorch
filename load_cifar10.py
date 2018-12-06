@@ -82,7 +82,7 @@ def convert_pkl_to_numpy(file_path):
 #------------------------------------------------------------------------------
 
 class CIFAR10Dataset(torch.utils.data.Dataset):    
-    def __init__(self, pixels, labels, transform=None):   
+    def __init__(self, pixels, labels, use_gpu, transform=None):   
         ''' A class used by the pytorch DataLoader for training of the models in pytorch.
         Should override __len__ and __getitem__ from Dataset
         
@@ -94,6 +94,7 @@ class CIFAR10Dataset(torch.utils.data.Dataset):
         self.transform = transform
         self.pixels = pixels
         self.labels = labels
+        self.use_gpu = use_gpu
                 
         if pixels.shape[0] != labels.shape[0]:
             raise IOError('The length of the pixels and labels list does not match!')
@@ -107,8 +108,13 @@ class CIFAR10Dataset(torch.utils.data.Dataset):
 
         label = self.labels[idx]
         
-        pixels = torch.tensor(pixels, dtype=torch.float)
-        label = torch.tensor(label, dtype=torch.long)
+        if self.use_gpu:
+            device_str = "cuda:0"
+        else:
+            device_str = "cpu"
+        
+        pixels = torch.tensor(pixels, dtype=torch.float, device=torch.device(device_str))
+        label = torch.tensor(label, dtype=torch.long, device=torch.device(device_str))
         
         if self.transform:        
             pixels = self.transform(pixels) 

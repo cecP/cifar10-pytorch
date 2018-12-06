@@ -5,24 +5,22 @@ import torch
 
 import custom_models 
 import load_cifar10 
-#import ipdb
 
 # Loading the data
 #------------------------------------------------------------------------------
 
+use_gpu = True
 PICKLED_FILES_PATH = "./Data/cifar-10-batches-py" 
 
 X_train, y_train, X_test, y_test = load_cifar10.convert_pkl_to_numpy(PICKLED_FILES_PATH)
-train_dataset = load_cifar10.CIFAR10Dataset(X_train, y_train)
+
+train_dataset = load_cifar10.CIFAR10Dataset(X_train, y_train, use_gpu)
 
 # Training the model
 #------------------------------------------------------------------------------
 
-use_gpu = True
-cnn_module = custom_models.CNNModule()
+cnn_module = custom_models.CNNModule2()
 model = custom_models.CustomModel(cnn_module, use_gpu)
-
-#model.module.load_state_dict(torch.load("model.params")) # if coefficients from pretrained model would be used
 
 # setting hyperparameters
 batch_size = 400
@@ -40,7 +38,7 @@ model.train(loader=train_loader,
             optimizer=optimizer, 
             num_epochs=num_epochs)
 
-torch.save(model.module.state_dict(), "model.params")
+torch.save(model.module.state_dict(), "cnn_model.params")
 
 # Evaluation of the model
 #------------------------------------------------------------------------------
