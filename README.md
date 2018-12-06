@@ -2,9 +2,7 @@
 # Pytorch models implemented on CIFAR10
 
 Deep learning models for CIFAR10 implemented in pytorch. CNN, RNN and Alexnet implemented up till now. 
-Useful for testing the performance of different model architectures. Can run both on CPU only and GPU, but CPU is too slow for
-the more complicated models.
-
+Useful for testing the performance of different model architectures. Can run both on CPU only and GPU.
 
 ### Prerequisites
 
