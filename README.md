@@ -1,7 +1,7 @@
 
 # Pytorch models implemented on CIFAR10
 
-Deep learning models for CIFAR10 implemented in pytorch. CNN, one directional RNN and Alexnet implemented up till now. 
+Deep learning models for CIFAR10 implemented in pytorch. CNN, RNN and Alexnet implemented up till now. 
 Useful for testing the performance of different model architectures. Can run both on CPU only and GPU, but CPU is too slow for
 the more complicated models.
 
@@ -25,7 +25,7 @@ Some architectures are present in **custom_models.py**. To implement a new archi
 and implementing *\_\_init__* and *forward* methods. Accuracy is evaluated with confusion matrix and percentage of correct hits. 
 
 ### RNN models
-The same as CNN, but the code is **train_rnn_model.py**. Bidirectional RNN would be the next model applied when I have time.
+The same as CNN, but the code is **train_rnn_model.py**. 
 
 ### Prebuilt pytorch models
 Some prebuilt model architectures can be found here: https://github.com/pytorch/vision/tree/master/torchvision/models.
