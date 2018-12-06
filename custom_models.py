@@ -21,8 +21,7 @@ labels_dict = {
         8: "ship",
         9: "truck"
         }
-
-
+    
 class CNNModule(nn.Module):
     ''' A module for convolutional neural network '''
     
@@ -46,12 +45,53 @@ class CNNModule(nn.Module):
            
         out = self.fc1(out)        
         
+        return out 
+    
+    
+class CNNModule2(nn.Module):
+    ''' A module for convolutional neural network '''
+    
+    def __init__(self):
+        super().__init__() 
+        
+        self.features = torch.nn.Sequential(
+                        nn.Conv2d(in_channels=3, out_channels=80, kernel_size=5, stride=1, padding=2),
+                        nn.ReLU(),
+                        nn.MaxPool2d(kernel_size=3, stride=2),
+                        nn.Conv2d(in_channels=80, out_channels=160, kernel_size=4, stride=1, padding=2),
+                        nn.ReLU(),
+                        nn.MaxPool2d(kernel_size=3, stride=2),
+                        nn.Conv2d(in_channels=160, out_channels=256, kernel_size=3, stride=1, padding=2),
+                        nn.ReLU(),
+                        nn.MaxPool2d(kernel_size=3, stride=2)
+                    )     
+        
+        self.classifier = nn.Sequential(
+            nn.Dropout(),
+            nn.Linear(4096, 1000),
+            nn.ReLU(inplace=True),
+            nn.Dropout(),
+            nn.Linear(1000, 200),
+            nn.ReLU(inplace=True),
+            nn.Linear(200, 10)
+        )
+        
+#        self.fc1 = nn.Linear(40 * 8 * 8, 10) # here it is easiest if you print the shape of the tensor before the linear layer in the forward method      
+
+    def forward(self, x):     
+        out = self.features(x) 
+
+        out = out.view(out.size(0), -1) # the fully connected layer takes 1 dim input; 
+                                        # the size of the batch is the first dimension of the new tensor and everything else flattened
+         
+        out = self.classifier(out)        
+        
         return out
     
     
 
 class RNNModule(nn.Module):
-    ''' A module for recurrent neural network '''
+    ''' A module for recurrent neural network. It is only one directional. '''
     
     def __init__(self, input_dim, hidden_dim, num_layers, output_dim, use_gpu):
         super().__init__() 
@@ -164,11 +204,6 @@ class CustomModel:
                     print("loss: {}".format(loss_tensor.data)) # for each epoch        
             print("loss: {}".format(loss_tensor.data)) # for each epoch
     
-    @timer            
-    def eval(self, dataset):
-        prediction = []
-        for i, (pixels_batch, labels_batch) in enumerate(dataset):
-            current_prediction = model.predict(pixels_batch)
 
 #------------------------------------------------------------------------------          
    

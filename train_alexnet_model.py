@@ -1,17 +1,12 @@
 
-import numpy as np
-import matplotlib.pyplot as plt
-
 import torch
 import torch.nn as nn
-import torchvision.models as models
+
+import torchvision.transforms as transforms
 
 import custom_models 
 import load_cifar10 
 #import ipdb
-
-import skimage.transform
-import torchvision.transforms as transforms
 
 # Loading the data
 #------------------------------------------------------------------------------
@@ -75,9 +70,9 @@ model = custom_models.CustomModel(alexnet, use_gpu)
 #model.module.load_state_dict(torch.load("model.params")) # if coefficients from pretrained model would be used
 
 # setting hyperparameters
-batch_size = 400
+batch_size = 200
 learning_rate = 0.0001
-num_epochs = 10
+num_epochs = 30
 loss = torch.nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(model.module.parameters(), lr=learning_rate)
 
@@ -90,13 +85,13 @@ model.train(loader=train_loader,
             optimizer=optimizer, 
             num_epochs=num_epochs)
 
-torch.save(model.module.state_dict(), "model.params")
+torch.save(model.module.state_dict(), "alexnet_model.params")
 
 # Evaluation of the model
 #------------------------------------------------------------------------------
 
-X_for_evaluation = X_test[0:1000,:]
-y_for_evaluation = y_test[0:1000]
+X_for_evaluation = X_test[1000:2000,:]
+y_for_evaluation = y_test[1000:2000]
 test_dataset = load_cifar10.CIFAR10Dataset(X_for_evaluation, y_for_evaluation, transform=transform)
 acc, cf = custom_models.predict_many_images(model, dataset=test_dataset)
 print("Acc: {}, \n\nConfusion Matrix: \n {}".format(acc, cf))

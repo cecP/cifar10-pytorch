@@ -1,5 +1,4 @@
 
-import numpy as np
 import matplotlib.pyplot as plt
 
 import torch
@@ -19,9 +18,8 @@ train_dataset = load_cifar10.CIFAR10Dataset(X_train, y_train)
 # Training the model
 #------------------------------------------------------------------------------
 
-rnn_module = custom_models.RNNModule(32, 100, 2, 10)
-
-use_gpu = False
+use_gpu = True
+rnn_module = custom_models.RNNModule(32, 100, 2, 10, use_gpu)
 model = custom_models.CustomModel(rnn_module, use_gpu)
 
 #model.module.load_state_dict(torch.load("model.params")) # if coefficients from pretrained model would be used
