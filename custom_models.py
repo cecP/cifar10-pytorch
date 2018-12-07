@@ -84,10 +84,52 @@ class CNNModule2(nn.Module):
         out = self.classifier(out)                
         return out
     
-    
 
 class RNNModule(nn.Module):
-    ''' A module for recurrent neural network. '''
+    ''' A module for recurrent neural network. The picture is treated pixel by pixel with 3 channel input 
+        Example initialisation:
+            rnn_module = RNNModule(3, 100, 2, 10, use_gpu)
+    '''
+    
+    def __init__(self, input_dim, hidden_dim, num_layers, output_dim, use_gpu):
+        super().__init__() 
+        
+        self.use_gpu = use_gpu
+        self.num_layers = num_layers
+        self.hidden_dim = hidden_dim
+        self.input_dim = input_dim
+        
+        self.lstm = nn.LSTM(input_dim, hidden_dim, num_layers, batch_first=False)        
+        self.fc = nn.Linear(hidden_dim, output_dim)        
+                
+    def forward(self, x):           
+        if self.use_gpu:
+            device_str = "cuda:0"
+        else:
+            device_str = "cpu"
+            
+        batch_size = x.size(0)
+        
+        # Initialize hidden state - dimensions are (num_layers, batch_size, hidden_dim)
+        h0 = torch.zeros(self.num_layers, batch_size, self.hidden_dim, device=torch.device(device_str))
+        c0 = torch.zeros(self.num_layers, batch_size, self.hidden_dim, device=torch.device(device_str))
+           
+        pixels_batch = x.view(batch_size, self.input_dim, 32*32)
+        pixels_batch = pixels_batch.permute(2,0,1)
+        
+        lstm_out, _ = self.lstm(pixels_batch, (h0, c0))        
+        lstm_out = lstm_out[-1, :, :]
+        
+        out = self.fc(lstm_out)                      
+        
+        return out
+
+
+class RNNModule2(nn.Module):
+    ''' A module for recurrent neural network. Each channel is treated separate and the input dim is one column of the picture.
+        Example initialisation:
+            rnn_module = custom_models.RNNModule(32, 100, 2, 10, use_gpu)
+    '''
     
     def __init__(self, input_dim, hidden_dim, num_layers, output_dim, use_gpu):
         super().__init__() 

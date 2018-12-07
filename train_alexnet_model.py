@@ -76,7 +76,7 @@ optimizer = torch.optim.Adam(model.module.parameters(), lr=learning_rate)
 
 train_loader = torch.utils.data.DataLoader(dataset=train_dataset,
                                            batch_size=batch_size,
-                                           shuffle=False)
+                                           shuffle=True)
 
 model.train(loader=train_loader, 
             loss=loss, 

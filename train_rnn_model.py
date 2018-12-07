@@ -19,7 +19,7 @@ train_dataset = load_cifar10.CIFAR10Dataset(X_train, y_train, use_gpu)
 # Training the model
 #------------------------------------------------------------------------------
 
-rnn_module = custom_models.RNNModule(32, 100, 2, 10, use_gpu)
+rnn_module = custom_models.RNNModule(3, 100, 2, 10, use_gpu)
 model = custom_models.CustomModel(rnn_module, use_gpu)
 
 # setting hyperparameters
@@ -31,7 +31,7 @@ optimizer = torch.optim.Adam(model.module.parameters(), lr=learning_rate)
 
 train_loader = torch.utils.data.DataLoader(dataset=train_dataset,
                                            batch_size=batch_size,
-                                           shuffle=False)
+                                           shuffle=True)
 
 model.train(loader=train_loader, 
             loss=loss, 
