@@ -121,3 +121,17 @@ class CIFAR10Dataset(torch.utils.data.Dataset):
         
         return pixels, label
 
+def plot_tens(image, switch_rgb=False):
+    # displays an image tensor with shape (3, pixels, pixels)
+    
+    import cv2
+    import numpy as np
+    import matplotlib.pyplot as plt
+    
+    image = image.data.numpy()
+    image = np.moveaxis(image, 0, 2)
+    if switch_rgb:
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    plt.imshow(image)
+    
+    return 0
