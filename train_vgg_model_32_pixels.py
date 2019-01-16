@@ -23,7 +23,7 @@ transform = transforms.Compose([
         transforms.ToTensor()
         ])
 
-train_dataset = load_cifar10.CIFAR10Dataset(X_train, y_train, use_gpu=use_gpu, transform=transform) # in order for thransforms to work output tensors should not be on gpu
+train_dataset = load_cifar10.CIFAR10Dataset(X_train, y_train, use_gpu=use_gpu, transform=None) # in order for thransforms to work output tensors should not be on gpu
 
 # Testing outputs from layers
 #------------------------------------------------------------------------------
@@ -41,18 +41,11 @@ class VGG_net(nn.Module):
                 nn.Conv2d(64, 128, kernel_size=3, padding=1),
                 nn.MaxPool2d(kernel_size=2, stride=2),
                 nn.Conv2d(128, 256, kernel_size=3, padding=1),
-                nn.Conv2d(256, 256, kernel_size=3, padding=1),
-                nn.MaxPool2d(kernel_size=2, stride=2),
-                nn.Conv2d(256, 512, kernel_size=3, padding=1),
-                nn.Conv2d(512, 512, kernel_size=3, padding=1),
-                nn.MaxPool2d(kernel_size=2, stride=2),
-                nn.Conv2d(512, 512, kernel_size=3, padding=1),
-                nn.Conv2d(512, 512, kernel_size=3, padding=1),
-                nn.MaxPool2d(kernel_size=2, stride=2)
+                nn.Conv2d(256, 256, kernel_size=3, padding=1)
           )
                         
-        self.classifier = nn.Sequential(
-            nn.Linear(512 * 7 * 7, 4096),     
+        self.classifier = nn.Sequential(   
+            nn.Linear(256 * 8 * 8, 4096),  
             nn.ReLU(inplace=True),
             nn.Dropout(),
             nn.Linear(4096, 4096),
@@ -83,7 +76,7 @@ class VGG_net(nn.Module):
                 nn.init.constant_(m.bias, 0)
 
 vggnet = VGG_net(num_classes=10)
-summary(vggnet, input_size=(3, 224, 224), batch_size=200)
+summary(vggnet, input_size=(3, 32, 32), batch_size=200)
 
 # Testing
 in_ = train_dataset.__getitem__(0)[0].unsqueeze(0)
@@ -116,7 +109,7 @@ model.train(loader=train_loader,
 
 X_for_evaluation = X_test[1000:2000,:]
 y_for_evaluation = y_test[1000:2000]
-test_dataset = load_cifar10.CIFAR10Dataset(X_for_evaluation, y_for_evaluation, use_gpu, transform=transform)
+test_dataset = load_cifar10.CIFAR10Dataset(X_for_evaluation, y_for_evaluation, use_gpu, transform=None)
 acc, cf = custom_models.predict_many_images(model, dataset=test_dataset)
 print("Acc: {}, \n\nConfusion Matrix: \n {}".format(acc, cf))
 
