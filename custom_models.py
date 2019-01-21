@@ -7,6 +7,7 @@ import torch.nn as nn
 import sklearn.metrics
 
 from load_cifar10 import timer
+import visdom
 
 labels_dict = {
         0: "airplane",
@@ -219,6 +220,9 @@ class CustomModel:
     def train(self, loader, loss, optimizer, num_epochs): 
         ''' method that wraps the training of the model '''
         
+        self.loss_history = []
+        vis = visdom.Visdom()
+        
         for epoch in range(num_epochs):
             print("epoch: {}".format(epoch))
             print("--------------------------------")
@@ -233,10 +237,18 @@ class CustomModel:
                 
                 loss_tensor = loss(outputs, labels_batch)
                 loss_tensor.backward()
+                
+                self.loss_history.append(loss_tensor.data)
+            
                 optimizer.step()
-                if i % 100 == 0:
-                    print("loss: {}".format(loss_tensor.data)) # for each epoch        
-            print("loss: {}".format(loss_tensor.data)) # for each epoch
+                if i % 10 == 0:
+                    print("loss: {}".format(loss_tensor.data)) # for each epoch   
+                    
+                    vis.line(X=np.array([i]),
+                             Y=np.array([loss_tensor.data]),
+                             win="loss",
+                             update="append")
+            
     
 
 #------------------------------------------------------------------------------          
