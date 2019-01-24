@@ -90,7 +90,7 @@ torch.save(model.module.state_dict(), "alexnet_model.params")
 
 X_for_evaluation = X_test[1000:2000,:]
 y_for_evaluation = y_test[1000:2000]
-test_dataset = load_cifar10.CIFAR10Dataset(X_for_evaluation, y_for_evaluation, transform=transform)
+test_dataset = load_cifar10.CIFAR10Dataset(X_for_evaluation, y_for_evaluation, use_gpu=False, transform=transform)
 acc, cf = custom_models.predict_many_images(model, dataset=test_dataset)
 print("Acc: {}, \n\nConfusion Matrix: \n {}".format(acc, cf))
 

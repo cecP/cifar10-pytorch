@@ -1,17 +1,16 @@
 
 import torch
 import torch.nn as nn
-
 import torchvision.transforms as transforms
 
 import custom_models 
 import load_cifar10
-from torchsummary import summary 
+import torchsummary  
 
 # Loading the data
 #------------------------------------------------------------------------------
 
-use_gpu = False
+use_gpu = True
 PICKLED_FILES_PATH = "./Data/cifar-10-batches-py" 
 
 X_train, y_train, X_test, y_test = load_cifar10.convert_pkl_to_numpy(PICKLED_FILES_PATH)
@@ -23,7 +22,7 @@ transform = transforms.Compose([
         transforms.ToTensor()
         ])
 
-train_dataset = load_cifar10.CIFAR10Dataset(X_train, y_train, use_gpu=use_gpu, transform=transform) # in order for thransforms to work output tensors should not be on gpu
+train_dataset = load_cifar10.CIFAR10Dataset(X_train, y_train, use_gpu=False, transform=transform) # in order for thransforms to work output tensors should not be on gpu
 
 # Testing outputs from layers
 #------------------------------------------------------------------------------
@@ -83,20 +82,14 @@ class VGG_net(nn.Module):
                 nn.init.constant_(m.bias, 0)
 
 vggnet = VGG_net(num_classes=10)
-summary(vggnet, input_size=(3, 224, 224), batch_size=200)
-
-# Testing
-in_ = train_dataset.__getitem__(0)[0].unsqueeze(0)
-out = vggnet.features(in_)
-out1 = out.view(out.size(0), -1)
-a = vggnet.classifier(out1)
+torchsummary.summary(vggnet, input_size=(3, 224, 224), batch_size=50, device="cpu")
 
 model = custom_models.CustomModel(vggnet, use_gpu)
 
 # setting hyperparameters
-batch_size = 200
+batch_size = 50
 learning_rate = 0.0001
-num_epochs = 1
+num_epochs = 3
 loss = torch.nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(model.module.parameters(), lr=learning_rate)
 
@@ -116,7 +109,7 @@ model.train(loader=train_loader,
 
 X_for_evaluation = X_test[1000:2000,:]
 y_for_evaluation = y_test[1000:2000]
-test_dataset = load_cifar10.CIFAR10Dataset(X_for_evaluation, y_for_evaluation, use_gpu, transform=transform)
+test_dataset = load_cifar10.CIFAR10Dataset(X_for_evaluation, y_for_evaluation, use_gpu=False, transform=transform)
 acc, cf = custom_models.predict_many_images(model, dataset=test_dataset)
 print("Acc: {}, \n\nConfusion Matrix: \n {}".format(acc, cf))
 

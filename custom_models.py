@@ -7,7 +7,6 @@ import torch.nn as nn
 import sklearn.metrics
 
 from load_cifar10 import timer
-import visdom
 
 labels_dict = {
         0: "airplane",
@@ -187,6 +186,7 @@ class CustomModel:
     def __init__(self, Module, use_gpu):        
        self.module = Module  
        self.use_gpu = use_gpu
+       self.iter = 0
        if self.use_gpu:
            self.module.cuda()
     
@@ -217,11 +217,15 @@ class CustomModel:
         return predictions
     
     @timer
-    def train(self, loader, loss, optimizer, num_epochs): 
+    def train(self, loader, loss, optimizer, num_epochs, use_visdom=True): 
         ''' method that wraps the training of the model '''
         
         self.loss_history = []
-        vis = visdom.Visdom()
+        
+        if use_visdom:
+            import visdom
+            vis = visdom.Visdom()
+        
         
         for epoch in range(num_epochs):
             print("epoch: {}".format(epoch))
@@ -244,10 +248,13 @@ class CustomModel:
                 if i % 10 == 0:
                     print("loss: {}".format(loss_tensor.data)) # for each epoch   
                     
-                    vis.line(X=np.array([i]),
-                             Y=np.array([loss_tensor.data]),
-                             win="loss",
-                             update="append")
+                    if use_visdom:
+                                                
+                        vis.line(X=np.array([self.iter]),
+                                 Y=np.array([loss_tensor.data]),
+                                 win="loss",
+                                 update="append")
+                self.iter += 1
             
     
 

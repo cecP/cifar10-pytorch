@@ -2,28 +2,19 @@
 import torch
 import torch.nn as nn
 
-import torchvision.transforms as transforms
-
 import custom_models 
 import load_cifar10
-from torchsummary import summary 
+import torchsummary   
 
 # Loading the data
 #------------------------------------------------------------------------------
 
-use_gpu = False
+use_gpu = True
 PICKLED_FILES_PATH = "./Data/cifar-10-batches-py" 
 
 X_train, y_train, X_test, y_test = load_cifar10.convert_pkl_to_numpy(PICKLED_FILES_PATH)
 
-# some transforms have to be applied to accept images less than 224x224
-transform = transforms.Compose([
-        transforms.ToPILImage(mode="RGB"), # input has to be converted to PIL image otherwise Resize won't work
-        transforms.Resize((224, 224)),
-        transforms.ToTensor()
-        ])
-
-train_dataset = load_cifar10.CIFAR10Dataset(X_train, y_train, use_gpu=use_gpu, transform=None) # in order for thransforms to work output tensors should not be on gpu
+train_dataset = load_cifar10.CIFAR10Dataset(X_train, y_train, use_gpu=use_gpu, transform=None)
 
 # Testing outputs from layers
 #------------------------------------------------------------------------------
@@ -76,20 +67,14 @@ class VGG_net(nn.Module):
                 nn.init.constant_(m.bias, 0)
 
 vggnet = VGG_net(num_classes=10)
-summary(vggnet, input_size=(3, 32, 32), batch_size=200)
-
-# Testing
-in_ = train_dataset.__getitem__(0)[0].unsqueeze(0)
-out = vggnet.features(in_)
-out1 = out.view(out.size(0), -1)
-a = vggnet.classifier(out1)
 
 model = custom_models.CustomModel(vggnet, use_gpu)
+torchsummary.summary(model.module, input_size=(3, 32, 32), batch_size=200)
 
 # setting hyperparameters
-batch_size = 200
+batch_size = 50
 learning_rate = 0.0001
-num_epochs = 1
+num_epochs = 4
 loss = torch.nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(model.module.parameters(), lr=learning_rate)
 
@@ -102,7 +87,7 @@ model.train(loader=train_loader,
             optimizer=optimizer, 
             num_epochs=num_epochs)
 
-#torch.save(model.module.state_dict(), "vggnet_model.params")
+torch.save(model.module.state_dict(), "vggnet_model.params")
 
 # Evaluation of the model
 #------------------------------------------------------------------------------
