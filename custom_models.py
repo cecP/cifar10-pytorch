@@ -217,10 +217,32 @@ class CustomModel:
         return predictions
     
     @timer
-    def train(self, loader, loss, optimizer, num_epochs, use_visdom=True): 
+    def train(self, dataset, batch_size, loss, optimizer, num_epochs, 
+              validation_split=0.8, val_batchsize=None, use_visdom=True): 
         ''' method that wraps the training of the model '''
         
-        self.loss_history = []
+        if validation_split is not None:
+            train_size = int(0.8 * len(dataset))
+            test_size = len(dataset) - train_size
+            train_dataset, val_dataset = torch.utils.data.random_split(dataset, [train_size, test_size])
+        else:    
+            train_dataset = dataset
+        
+        train_loader = torch.utils.data.DataLoader(dataset=train_dataset,
+                                                   batch_size=batch_size,
+                                                   shuffle=True)
+        
+        if val_batchsize is None:
+            val_batchsize = len(val_dataset)
+            
+        val_loader = torch.utils.data.DataLoader(dataset=val_dataset,
+                                                     batch_size=val_batchsize,
+                                                     shuffle=True)
+        
+        val_pixels_batch, val_labels_batch = next(iter(val_loader))
+        
+        self.train_loss_history = []
+        self.val_loss_history = []
         
         if use_visdom:
             import visdom
@@ -230,7 +252,7 @@ class CustomModel:
         for epoch in range(num_epochs):
             print("epoch: {}".format(epoch))
             print("--------------------------------")
-            for i, (pixels_batch, labels_batch) in enumerate(loader):
+            for i, (pixels_batch, labels_batch) in enumerate(train_loader):
                 optimizer.zero_grad()                                           
                 
                 if self.use_gpu and pixels_batch.device.type == "cpu":                    
@@ -239,21 +261,41 @@ class CustomModel:
                                                   
                 outputs = self.module.forward(pixels_batch)    
                 
-                loss_tensor = loss(outputs, labels_batch)
-                loss_tensor.backward()
-                
-                self.loss_history.append(loss_tensor.data)
-            
+                train_loss_tensor = loss(outputs, labels_batch)
+                train_loss_tensor.backward()
+                                
                 optimizer.step()
                 if i % 10 == 0:
-                    print("loss: {}".format(loss_tensor.data)) # for each epoch   
+                                                            
+                    val_outputs = self.module.forward(val_pixels_batch)
+                    val_loss_tensor = loss(val_outputs, val_labels_batch)
+                                                          
+                    self.train_loss_history.append(train_loss_tensor.data) 
+                    self.val_loss_history.append(val_loss_tensor.data)
+                    
+                    print("train loss: {}".format(train_loss_tensor.data)) 
+                    print("val loss: {}".format(val_loss_tensor.data)) 
                     
                     if use_visdom:
                                                 
+#                        vis.line(X=np.array([self.iter]),
+#                                 Y=np.array([train_loss_tensor.data]),
+#                                 win="loss",
+#                                 update="append")
+                        
                         vis.line(X=np.array([self.iter]),
-                                 Y=np.array([loss_tensor.data]),
+                                 Y=np.array([train_loss_tensor.data]),
                                  win="loss",
-                                 update="append")
+                                 name="train",
+                                 update="append",
+                                 opts=dict(linecolor=np.array([[0, 255, 0]])))
+
+                        vis.line(X=np.array([self.iter]),
+                                 Y=np.array([val_loss_tensor.data]),
+                                 win="loss",  
+                                 name="val",
+                                 update="append",
+                                 opts=dict(linecolor=np.array([[255, 0, 0]])))
                 self.iter += 1
             
     

@@ -33,10 +33,12 @@ train_loader = torch.utils.data.DataLoader(dataset=train_dataset,
                                            batch_size=batch_size,
                                            shuffle=True)
 
-model.train(loader=train_loader, 
+model.train(dataset=train_dataset,             
+            batch_size=batch_size,
             loss=loss, 
             optimizer=optimizer, 
-            num_epochs=num_epochs)
+            num_epochs=num_epochs,
+            val_batchsize=30)
 
 torch.save(model.module.state_dict(), "rnn_model.params")
 
